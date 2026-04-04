@@ -15,7 +15,7 @@ def load_diarization_pipeline() -> Any:
         )
 
     pipeline = Pipeline.from_pretrained(
-        "pyannote/speaker-diarization",
+        "pyannote/speaker-diarization-3.1",
         use_auth_token=HF_TOKEN,
     )
 
