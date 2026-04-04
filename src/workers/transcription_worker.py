@@ -1,7 +1,6 @@
 import traceback
 from pathlib import Path
 
-import whisper
 from PySide6.QtCore import QObject, Signal
 
 from src.audio.ffmpeg_utils import (
@@ -10,6 +9,10 @@ from src.audio.ffmpeg_utils import (
     load_wav_as_numpy,
 )
 from src.audio.file_scanner import list_audio_files
+from src.services.whisper_service import (
+    transcribe_with_whisperx,
+    build_plain_text,
+)
 
 
 class TranscriptionWorker(QObject):
@@ -49,8 +52,7 @@ class TranscriptionWorker(QObject):
             ffmpeg_exe = get_ffmpeg_executable()
             self.log.emit(f"FFmpeg do ambiente virtual encontrado em: {ffmpeg_exe}")
 
-            self.log.emit(f"Carregando modelo Whisper: {self.model_name}")
-            model = whisper.load_model(self.model_name)
+            self.log.emit(f"Carregando modelo WhisperX: {self.model_name}")
 
             total_files = len(audio_files)
 
@@ -75,17 +77,18 @@ class TranscriptionWorker(QObject):
 
                 audio_array = load_wav_as_numpy(temp_wav)
 
-                result = model.transcribe(
-                    audio_array,
-                    language="pt",
-                    task="transcribe",
-                    verbose=False,
-                    fp16=False,
+                self.log.emit(f"Transcrevendo com WhisperX: {audio_file.name}")
+
+                result = transcribe_with_whisperx(
+                    model_name=self.model_name,
+                    audio_array=audio_array,
                 )
+
+                text_output = build_plain_text(result)
 
                 output_file = output_dir / f"{audio_file.stem}.txt"
                 with open(output_file, "w", encoding="utf-8") as file:
-                    file.write(result["text"].strip())
+                    file.write(text_output)
 
                 try:
                     temp_wav.unlink(missing_ok=True)
