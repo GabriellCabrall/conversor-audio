@@ -22,14 +22,11 @@ def get_compute_type(device: str) -> str:
 
 
 def load_whisperx_model(model_name: str) -> tuple[Any, str, str]:
-    """
-    Carrega o modelo WhisperX e retorna:
-    - model
-    - device
-    - compute_type
-    """
     device = get_device()
     compute_type = get_compute_type(device)
+
+    print(f"[WhisperX] Dispositivo selecionado: {device}")
+    print(f"[WhisperX] Compute type: {compute_type}")
 
     model = whisperx.load_model(
         model_name,
@@ -100,15 +97,8 @@ def build_plain_text(transcription_result: dict) -> str:
 def transcribe_with_whisperx(
     model_name: str,
     audio_array,
-) -> dict:
-    """
-    Pipeline completo:
-    - carrega modelo
-    - transcreve
-    - alinha
-    - retorna resultado alinhado
-    """
-    model, device, _compute_type = load_whisperx_model(model_name)
+) -> tuple[dict, str, str]:
+    model, device, compute_type = load_whisperx_model(model_name)
 
     transcription = transcribe_audio_array(model, audio_array)
     aligned = align_transcription(
@@ -117,4 +107,4 @@ def transcribe_with_whisperx(
         device=device,
     )
 
-    return aligned
+    return aligned, device, compute_type

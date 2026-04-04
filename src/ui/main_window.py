@@ -56,6 +56,17 @@ class MainWindow(QWidget):
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 1px solid #bfbfbf;
+                border-radius: 4px;
+                text-align: center;
+            }
+
+            QProgressBar::chunk {
+                background-color: #22c55e;
+            }
+        """)
 
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)

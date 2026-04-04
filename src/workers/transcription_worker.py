@@ -38,6 +38,26 @@ class TranscriptionWorker(QObject):
     def stop(self) -> None:
         self._running = False
 
+    def _emit_step_progress(
+        self,
+        index: int,
+        total_files: int,
+        step_ratio: float,
+    ) -> None:
+        """
+        Atualiza a barra de progresso considerando:
+        - progresso global entre arquivos
+        - progresso parcial dentro do arquivo atual
+        """
+        file_start_progress = int(((index - 1) / total_files) * 100)
+        file_end_progress = int((index / total_files) * 100)
+
+        progress_value = file_start_progress + int(
+            (file_end_progress - file_start_progress) * step_ratio
+        )
+
+        self.progress.emit(progress_value)
+
     def run(self) -> None:
         try:
             folder = Path(self.folder_path)
@@ -60,9 +80,10 @@ class TranscriptionWorker(QObject):
             ffmpeg_exe = get_ffmpeg_executable()
             self.log.emit(f"FFmpeg do ambiente virtual encontrado em: {ffmpeg_exe}")
 
-            self.log.emit(f"Carregando modelo WhisperX: {self.model_name}")
+            self.log.emit(f"Modelo selecionado: {self.model_name}")
 
             total_files = len(audio_files)
+            self.progress.emit(0)
 
             for index, audio_file in enumerate(audio_files, start=1):
                 if not self._running:
@@ -71,6 +92,7 @@ class TranscriptionWorker(QObject):
                     return
 
                 self.log.emit(f"Processando ({index}/{total_files}): {audio_file.name}")
+                self._emit_step_progress(index, total_files, 0.05)
 
                 temp_wav = temp_dir / f"{audio_file.stem}.wav"
                 self.log.emit(f"Convertendo para WAV: {audio_file.name}")
@@ -80,17 +102,22 @@ class TranscriptionWorker(QObject):
                     output_file=temp_wav,
                     ffmpeg_exe=ffmpeg_exe,
                 )
+                self._emit_step_progress(index, total_files, 0.15)
 
-                self.log.emit(f"Transcrevendo: {audio_file.name}")
-
+                self.log.emit(f"Carregando áudio em memória: {audio_file.name}")
                 audio_array = load_wav_as_numpy(temp_wav)
+                self._emit_step_progress(index, total_files, 0.20)
 
                 self.log.emit(f"Transcrevendo com WhisperX: {audio_file.name}")
 
-                result = transcribe_with_whisperx(
+                result, device, compute_type = transcribe_with_whisperx(
                     model_name=self.model_name,
                     audio_array=audio_array,
                 )
+
+                self.log.emit(f"Dispositivo usado: {device}")
+                self.log.emit(f"Modo de processamento: {compute_type}")
+                self._emit_step_progress(index, total_files, 0.75)
 
                 if self.enable_speakers:
                     self.log.emit(f"Identificando falantes: {audio_file.name}")
@@ -102,20 +129,23 @@ class TranscriptionWorker(QObject):
                         whisper_segments=result.get("segments", []),
                         speaker_segments=speaker_segments,
                     )
+                    self._emit_step_progress(index, total_files, 0.92)
                 else:
                     text_output = build_plain_text(result)
+                    self._emit_step_progress(index, total_files, 0.92)
 
                 output_file = output_dir / f"{audio_file.stem}.txt"
                 with open(output_file, "w", encoding="utf-8") as file:
                     file.write(text_output)
+
+                self._emit_step_progress(index, total_files, 0.98)
 
                 try:
                     temp_wav.unlink(missing_ok=True)
                 except Exception:
                     pass
 
-                progress_value = int((index / total_files) * 100)
-                self.progress.emit(progress_value)
+                self._emit_step_progress(index, total_files, 1.0)
                 self.log.emit(f"Arquivo salvo: {output_file.name}")
 
             try:
@@ -123,6 +153,7 @@ class TranscriptionWorker(QObject):
             except Exception:
                 pass
 
+            self.progress.emit(100)
             self.finished.emit()
 
         except Exception:
