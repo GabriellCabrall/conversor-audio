@@ -13,6 +13,8 @@ from src.services.whisper_service import (
     transcribe_with_whisperx,
     build_plain_text,
 )
+from src.services.diarization_service import diarize_audio, diarization_to_segments
+from src.services.transcriptor_formatter import build_speaker_transcript
 
 
 class TranscriptionWorker(QObject):
@@ -21,11 +23,17 @@ class TranscriptionWorker(QObject):
     finished = Signal()
     failed = Signal(str)
 
-    def __init__(self, folder_path: str, model_name: str) -> None:
+    def __init__(
+        self,
+        folder_path: str,
+        model_name: str,
+        enable_speakers: bool = False,
+    ) -> None:
         super().__init__()
         self.folder_path = folder_path
         self.model_name = model_name
         self._running = True
+        self.enable_speakers = enable_speakers
 
     def stop(self) -> None:
         self._running = False
@@ -84,7 +92,18 @@ class TranscriptionWorker(QObject):
                     audio_array=audio_array,
                 )
 
-                text_output = build_plain_text(result)
+                if self.enable_speakers:
+                    self.log.emit(f"Identificando falantes: {audio_file.name}")
+
+                    diarization = diarize_audio(str(temp_wav))
+                    speaker_segments = diarization_to_segments(diarization)
+
+                    text_output = build_speaker_transcript(
+                        whisper_segments=result.get("segments", []),
+                        speaker_segments=speaker_segments,
+                    )
+                else:
+                    text_output = build_plain_text(result)
 
                 output_file = output_dir / f"{audio_file.stem}.txt"
                 with open(output_file, "w", encoding="utf-8") as file:

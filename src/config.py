@@ -18,3 +18,5 @@ DEFAULT_NUM_SPEAKERS = int(_default_num_speakers) if _default_num_speakers.isdig
 TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = (
     os.getenv("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "false").lower() == "true"
 )
+
+DEFAULT_ENABLE_SPEAKERS = False

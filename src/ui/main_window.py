@@ -13,10 +13,11 @@ from PySide6.QtWidgets import (
     QComboBox,
     QMessageBox,
     QProgressBar,
+    QCheckBox,
 )
 
 from src.audio.file_scanner import list_audio_file_names
-from src.config import APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, DEFAULT_MODEL
+from src.config import APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, DEFAULT_MODEL, DEFAULT_ENABLE_SPEAKERS
 from src.workers.transcription_worker import TranscriptionWorker
 
 
@@ -40,6 +41,9 @@ class MainWindow(QWidget):
         self.model_combo = QComboBox()
         self.model_combo.addItems(["tiny", "base", "small", "medium", "large"])
         self.model_combo.setCurrentText(DEFAULT_MODEL)
+
+        self.speakers_checkbox = QCheckBox("Identificar falantes")
+        self.speakers_checkbox.setChecked(DEFAULT_ENABLE_SPEAKERS)
 
         self.file_list = QListWidget()
 
@@ -68,6 +72,7 @@ class MainWindow(QWidget):
         top_layout.addWidget(self.select_button)
         top_layout.addWidget(QLabel("Modelo:"))
         top_layout.addWidget(self.model_combo)
+        top_layout.addWidget(self.speakers_checkbox)
 
         action_layout = QHBoxLayout()
         action_layout.addWidget(self.start_button)
@@ -123,6 +128,7 @@ class MainWindow(QWidget):
         self.worker = TranscriptionWorker(
             folder_path=self.selected_folder,
             model_name=self.model_combo.currentText(),
+            enable_speakers=self.speakers_checkbox.isChecked(),
         )
 
         self.worker.moveToThread(self.thread)
