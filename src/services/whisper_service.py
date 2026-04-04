@@ -4,6 +4,12 @@ from typing import Any
 import torch
 import whisperx
 
+import os
+
+from src.config import TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD
+
+if TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD:
+    os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "true"
 
 def get_device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"

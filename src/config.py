@@ -14,3 +14,7 @@ ENABLE_DIARIZATION = os.getenv("ENABLE_DIARIZATION", "true").lower() == "true"
 
 _default_num_speakers = os.getenv("DEFAULT_NUM_SPEAKERS", "").strip()
 DEFAULT_NUM_SPEAKERS = int(_default_num_speakers) if _default_num_speakers.isdigit() else None
+
+TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = (
+    os.getenv("TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD", "false").lower() == "true"
+)
