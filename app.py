@@ -246,6 +246,7 @@ class MainWindow(QWidget):
 
         self.model_combo = QComboBox()
         self.model_combo.addItems(["tiny", "base", "small", "medium", "large"])
+        self.model_combo.setCurrentText("small")
 
         self.file_list = QListWidget()
 
